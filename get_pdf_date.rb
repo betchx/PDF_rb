@@ -1,7 +1,13 @@
 #! /bin/ruby
-#
+# coding: cp932
 
 require "time"
+
+if RUBY_VERSION < "1.9"
+  DATE_FORMAT = '%Y-%m-%d %H:%M:%S %z (%Z)'
+else
+  DATE_FORMAT = '%F %T %:z (%Z)'
+end
 
 VERSION_LIMIT=5
 ICRE = 0
@@ -55,7 +61,7 @@ ARGV.each do |file|
   header = f.gets
   unless header =~ /^%PDF-1\.(\d)/
     f.close
-    puts " It does not a PDF file. skipped."
+    puts " PDFファイルではないのでスキップします．"
     next
   end
   dc = nil
@@ -65,8 +71,14 @@ ARGV.each do |file|
   else
     dc, dm = check_new_pdf(f)
   end
-  puts "  Create: #{dc}"
-  puts "  Modify: #{dm}"
+  puts "  作成日時: #{dc.strftime(DATE_FORMAT)}"
+  puts "  修正日時: #{dm.strftime(DATE_FORMAT)}"
   f.close
   puts
 end
+
+if ENV.key?("OCRA_EXECUTABLE") || $Exerb
+  puts "Enterキーを押すと終了します．"
+  $stdin.gets 
+end
+
