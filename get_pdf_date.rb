@@ -1,13 +1,10 @@
 #! /bin/ruby
 # coding: cp932
 
+require "date"
 require "time"
 
-if RUBY_VERSION < "1.9"
-  DATE_FORMAT = '%Y-%m-%d %H:%M:%S %z (%Z)'
-else
-  DATE_FORMAT = '%F %T %:z (%Z)'
-end
+DATE_FORMAT = '%F %T %:z'
 
 VERSION_LIMIT=5
 ICRE = 0
@@ -16,13 +13,17 @@ IMOD = 1
 def check_old_pdf(f)
   flags = [false, false]
   while line = f.gets
-    if line =~ /\/CreationDate ?\(D:(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)\+(\d\d)'(\d\d)'\)/
-      dc = Time.local(*([$1,$2,$3,$4,$5,$6].map{|x| x.to_i}))
+#    if line =~ /\/CreationDate ?\(D:(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)([+-]\d\d)'(\d\d)'\)/
+#      dc = DateTime.new(*([$1,$2,$3,$4,$5,$6].map{|x| x.to_i}.append($7+$8)))
+    if line =~ /\/CreationDate ?\(D:(\d{14}[+-]\d\d)'(\d\d)'\)/
+      dc = DateTime.parse($1+$2)
       flags[ICRE] = true
       break if flags.all?
     end
-    if line =~ /\/ModDate ?\(D:(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)\+(\d\d)'(\d\d)'\)/
-      dm = Time.local(*([$1,$2,$3,$4,$5,$6].map{|x| x.to_i}))
+#    if line =~ /\/ModDate ?\(D:(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)([+-]\d\d)'(\d\d)'\)/
+#      dm = DateTime.new(*([$1,$2,$3,$4,$5,$6].map{|x| x.to_i}.append($7+$8)))
+    if line =~ /\/ModDate ?\(D:(\d{14}[+-]\d\d)'(\d\d)'\)/
+      dm = DateTime.parse($1+$2)
       flags[IMOD] = true
       break if flags.all?
     end
@@ -35,19 +36,19 @@ def check_new_pdf(f)
   while line = f.gets
     case line
     when /xap:CreateDate=(["'])([^"]+)\1/
-      dc = Time.parse($2)
+      dc = DateTime.parse($2)
       flags[ICRE] = true
       break if flags.all?
     when /xap:ModifyDate=(["'])([^"]+)\1/
-      dm = Time.parse($2)
+      dm = DateTime.parse($2)
       flags[IMOD] = true
       break if flags.all?
     when /<(xmp:CreateDate)>(.*)<\/\1>/
-      dc = Time.parse($2)
+      dc = DateTime.parse($2)
       flags[ICRE] = true
       break if flags.all?
     when /<(xmp:ModifyDate)>(.*)<\/\1>/
-      dm = Time.parse($2)
+      dm = DateTime.parse($2)
       flags[IMOD] = true
       break if flags.all?
     end
@@ -56,6 +57,8 @@ def check_new_pdf(f)
 end
 
 ARGV.each do |file|
+  ct = DateTime.parse(File.ctime(file).to_s)
+  mt = DateTime.parse(File.mtime(file).to_s)
   puts file + ":"
   f = open(file,"rb")
   header = f.gets
@@ -71,8 +74,8 @@ ARGV.each do |file|
   else
     dc, dm = check_new_pdf(f)
   end
-  puts "  ì¬“ú: #{dc.strftime(DATE_FORMAT)}"
-  puts "  C³“ú: #{dm.strftime(DATE_FORMAT)}"
+  puts "  ì¬“ú: #{dc.strftime(DATE_FORMAT)} (file:#{ct.strftime(DATE_FORMAT)})"
+  puts "  C³“ú: #{dm.strftime(DATE_FORMAT)} (file:#{mt.strftime(DATE_FORMAT)})"
   f.close
   puts
 end
