@@ -45,6 +45,8 @@ module Frm_form1
     @c_edits = {:year => @cyear, :mon => @cmon, :mday => @cmday, :hour => @chour, :min => @cmin, :sec => @csec}
     @m_edits = {:year => @myear, :mon => @mmon, :mday => @mmday, :hour => @mhour, :min => @mmin, :sec => @msec}
     @msg_text = ""
+    @logfilename = File.basename($0,".rb")+".log"
+    @log = open(@logfilename, "a")
   end
   def get_mod(h)
     res = Hash.new
@@ -72,8 +74,10 @@ module Frm_form1
   def disp(msg = "", cont = false)
     if cont
       @msg_text += msg
+      @log.print msg
     else
       @msg_text += msg.chomp + "\r\n"
+      @log.puts msg
     end
     @msg.text = @msg_text
     n = @msg_text.size
@@ -83,12 +87,15 @@ module Frm_form1
   end
 
   # メッセージを詳細に表示する場合
+  # ログには出力する
   def info(msg)
     if @cbVerbose.checked?
       @msg_text += msg.chomp + "\r\n"
       @msg.text = @msg_text
+      @log.puts msg
     end
   end
+
 
   # メイン実行部
   def self_dropfiles(files)
@@ -281,9 +288,7 @@ module Frm_form1
     disp " #{ng}ファイルは修正に失敗 " if ng > 0
     disp " 処理対象外 #{other} ファイル" if other > 0
     disp " 処理終了 at #{DateTime.now.strftime(DATE_FORMAT)}"
-    disp
     disp "!!注意!! ファイルシステムの時刻は現在時刻のままですので別途修正してください．"
-    disp
 
   end
 
