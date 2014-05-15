@@ -62,6 +62,7 @@ module Frm_form1
     n = @msg_text.size
     @msg.setSel(n, n)
     @msg.setCaret(n)
+    @msg.scrolltocaret
   end
 
   # メッセージを詳細に表示する場合
