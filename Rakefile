@@ -18,17 +18,23 @@ end
 
 rule '.exy' => ['.rb', '.ver'] do |t|
   rb,ver = *t.sources
-  puts rb
-  puts ver
+  #puts rb
+  #puts ver
   sh "ruby -I ../lib -r exerb/mkexy #{rb}"
   exy = t.name
   tmp = exy + ".tmp"
   File.rename(exy, tmp)
+  versions = open(ver,"rb").read
   open(exy, "wb") do |out|
     open(tmp,"rb")do |f|
       while line = f.gets
+        if line =~ /core:/
+          if versions =~ /CORE:GUI/
+            line.sub!(/cui/,'gui')
+          end
+        end
         if line =~ /^file:/
-          out.print open(ver,"rb").read
+          out.print versions
           out.puts
         end
         out.puts line
@@ -61,6 +67,8 @@ resource:
     original_filename     : #{t.name.pathmap '%X.rb'}
     private_build         : 
     special_build         : 
+# GUIにする場合は次の行のCUIをGUIに変更してください．
+# CORE:CUI
     NNN
   end
   raise NKF.nkf(disp_coding, "#{t.name}の修正が必要です．")
