@@ -36,7 +36,21 @@ module Frm_form1
     end
     res
   end
-  
+
+  def btn_clear_cedits_clicked
+    @c_edits.each do |k,c|
+      c.text = ""
+    end
+  end
+
+  def btn_clearl_medits_clicked
+    @m_edits.each do |k, c|
+      c.text = ""
+    end
+  end
+
+
+
   # メッセージを表示
   def disp(msg = "", cont = false)
     if cont
@@ -233,14 +247,14 @@ module Frm_form1
     dt =  h.to_datetime
 
     return false if dt == tm  # 時間修正が無ければ何もしない．
-    
+
     disp "#{msg}を修正： #{tm.strftime(DATE_FORMAT)} ==> #{dt.strftime(DATE_FORMAT)}"
     return dt
   end
 
-  def btnClear_clicked
+  def btnClearMsg_clicked
     @msg_text = ""
-    @msg.clear
+    @msg.text = ""
   end
 
 
@@ -249,11 +263,11 @@ module Frm_form1
 # キャンセル． 不安定化の原因になりそうなので
 #  def change_file_time(ct, mt, at = nil)
 #    at = mt if at.nil?
-#    
+#
 #  end
-#  
+#
 #  def make_filetime(tm)
-#    
+#
 #  end
 
 end
