@@ -1,0 +1,18 @@
+# -*- mode: yaml; coding: utf-8 -*-
+# vim: set fenc=utf-8 :
+resource:
+  version:
+    file_version_number   : 0.1.0.0
+    product_version_number: 0.1.0.0
+    comments              : D&Dで実行可能．最初に見つかった日付のみを出力する．
+    company_name          : Nikken Sekkei Civil Eng. Ltd.
+    legal_copyright       : Atsushi Tanabe
+    legal_trademarks      : 
+    file_version          : Version 0.1
+    product_version       : Version 0.1
+    product_name          : 
+    file_description      : 引数で与えられたPDF内部の日時を表示．
+    internal_name         : get_pdf_date
+    original_filename     : get_pdf_date.rb
+    private_build         : 
+    special_build         : 
