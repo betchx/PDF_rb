@@ -49,7 +49,7 @@ module Frm_form1
     @msg.setSel(n, n)
     @msg.setCaret(n)
   end
-  
+
   # メッセージを詳細に表示する場合
   def info(msg)
     if @cbVerbose.checked?
@@ -57,25 +57,25 @@ module Frm_form1
       @msg.text = @msg_text
     end
   end
-  
+
   # メイン実行部
   def self_dropfiles(files)
 
     # Start
     disp "==============================================================="
     disp "処理開始： #{DateTime.now.strftime(DATE_FORMAT)}"
-    disp "---------------------------------------------------------------"
 
     # 修正項目ハッシュの取得
     c_mod = get_mod(@c_edits)
     m_mod = get_mod(@m_edits)
     f   = nil # スコープ対策
     out = nil # スコープ対策
-    
+
     ok = 0 # 処理に成功したファイル数
     ng = 0 # 処理に失敗したファイル数
-    
+
     files.each do |file|
+      disp "---------------------------------------------------------------"
       disp "対象ファイル：#{file}"
       back = file + ".bak"
       disp "対象ファイルを退避 ==> #{back} ", true
@@ -161,7 +161,7 @@ module Frm_form1
           info e.message
           return
         end
-        
+
         begin # mod
         if line =~ MDATE_OLD_RE
           dm = DateTime.parse($2+$3)
@@ -184,7 +184,7 @@ module Frm_form1
               tm.strftime("<#{$1}>%FT%T%:z</#{$1}>")}
           end
         end
-        rescue 
+        rescue
           disp "エラーが生じました．"
           disp " 更新日時の設定にエラーがあるかもしれません．"
           info " dm: #{dm}"
@@ -198,30 +198,28 @@ module Frm_form1
           File.rename(back, file)
           return
         end
-        
-        
+
         out.puts line
         ####################################
       end
-      
+
       # コピー完了
       out.close
       f.close
-      
+
       ok += 1
-      
+
     end
-    
-    disp 
-    disp "---------------------------------------------------------------"
+
+    disp
     disp " #{files.size}ファイルを処理"
     disp " #{ok}ファイルの修正に成功．" if ok > 0
     disp " #{ng}ファイルは修正に失敗 " if ng > 0
     disp " 処理終了 at #{DateTime.now.strftime(DATE_FORMAT)}"
-    disp 
+    disp
     disp "!!注意!! ファイルシステムの時刻は現在時刻のままですので別途修正してください．"
     disp
-    
+
   end
 
   def query(msg, mod, tm)
