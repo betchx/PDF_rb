@@ -7,7 +7,8 @@ else
 end
 require 'nkf'
 
-exes = FileList['*.rb'].pathmap("%X.exe")
+#exes = FileList['*.rb'].pathmap("%X.exe")
+exes = FileList[%w(pdf_time_changer.exe get_pdf_date.exe)]
 
 task :default => exes #["qplr-sf.exe"]
 
