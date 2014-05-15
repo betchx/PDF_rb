@@ -6,6 +6,23 @@ require 'date'
 require 'time'
 
 
+# Const for MSG box
+require 'vr/contrib/msgboxconst'
+require 'vr/vrdialog' # for msg box
+module WConst
+  IDABORT    = 3 # 中止
+  IDCANCEL   = 2 # キャンセル
+  IDCONTINUE =11 # 続行 (Win2000用)
+  IDIGNORE   = 5 # 無視
+  IDNO       = 7 # いいえ
+  IDOK       = 1 # OK
+  IDRETRY    = 4 # 再試行
+  IDTRYAGAIN =10 # 再実行 (Win2000用)
+  IDYES      = 6 # はい
+end
+
+include WConst
+
 # regex of dates
 CDATE_OLD_RE = /(\/CreationDate ?\(D:)(\d{14}[+-]\d\d)'(\d\d)'\)/
 MDATE_OLD_RE = /(\/ModDate ?\(D:)(\d{14}[+-]\d\d)'(\d\d)'\)/
@@ -99,12 +116,31 @@ module Frm_form1
         next
       end
       back = file + ".bak"
+      if File.exist?(back)
+        if File.file?(back)
+          # 通常ファイルなので削除可能なはず
+          case messageBox("退避先にファイルが存在します上書きしてよろしいですか？","上書きの確認", MB_YESNOCANCEL | MB_ICONQUESTION)
+          when IDNO
+            disp "上書き防止のためにこのファイルの処理をスキップします．"
+            ng += 1
+            next
+          when IDCANCEL
+            disp "処理を中断しました．"
+            return
+          end
+        else
+          disp "退避先#{back}が特殊で削除できないため処理をスキップします．"
+          ng += 1
+          next
+        end
+      end
       disp "対象ファイルを退避 ==> #{back} ", true
       begin
         File.rename(file, back)
         disp " OK"
       rescue
-        disp " エラー (処理をスキップします)"
+        disp " エラー"
+        disp " ファイルが使用中などの為処理できなかったのでスキップします．"
         ng += 1
         next
       end
