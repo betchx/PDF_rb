@@ -86,11 +86,17 @@ module Frm_form1
     out = nil # スコープ対策
 
     ok = 0 # 処理に成功したファイル数
+    other = 0 # PDF以外のファイル数
     ng = 0 # 処理に失敗したファイル数
 
     files.each do |file|
       disp "---------------------------------------------------------------"
       disp "対象ファイル：#{file}"
+      unless file =~ /\.pdf$/i
+        disp "PDFファイルでないので処理しません．"
+        other += 1
+        next
+      end
       back = file + ".bak"
       disp "対象ファイルを退避 ==> #{back} ", true
       begin
@@ -109,6 +115,15 @@ module Frm_form1
         disp "なんらかの重大なエラーが生じた可能性があるので処理を中断しました．"
         return
       end
+      header = f.gets
+      unless header =~ /^%PDF-(1\.\d)\r?\n?/
+        disp "PDFヘッダが確認できませんでした．"
+        disp "PDFファイルではない様なのでスキップします．"
+        other += 1
+        f.close
+        next
+      end
+      disp "PDF バージョン: #{$1}"
       begin
         out = open(file, "wb")
         info "出力先をオープン"
@@ -118,12 +133,10 @@ module Frm_form1
         disp "重大なエラーの為処理を中断しました．"
         return
       end
-      header = f.gets
-      disp "PDF バージョン: #{header}"
       begin
         out.puts header
       rescue
-        disp "ファイルが書き込みできませんでした."
+        disp "ファイルに書き込みができませんでした."
         disp "スキップします."
         out.close
         f.close
@@ -229,6 +242,7 @@ module Frm_form1
     disp " #{files.size}ファイルを処理"
     disp " #{ok}ファイルの修正に成功．" if ok > 0
     disp " #{ng}ファイルは修正に失敗 " if ng > 0
+    disp " 処理対象外 #{other} ファイル" if other > 0
     disp " 処理終了 at #{DateTime.now.strftime(DATE_FORMAT)}"
     disp
     disp "!!注意!! ファイルシステムの時刻は現在時刻のままですので別途修正してください．"
