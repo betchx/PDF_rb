@@ -90,14 +90,14 @@ while line = f.gets
     dc = DateTime.parse($2+$3)
     if update = query("ì¬“ú",dc)
       line.sub!(CDATE_OLD_RE){
-        $1 + update.strftime("%Y%m%d%H%M%S%:z:").gsub(":","'")}
+        $1 + update.strftime("%Y%m%d%H%M%S%:z:)").gsub(":","'")}
     end
   end
   if line =~ MDATE_OLD_RE
     dc = DateTime.parse($2+$3)
     if update = query("XV“ú", dc)
       line.sub!(MDATE_OLD_RE){
-        $1 + update.strftime("%Y%m%d%H%M%S%:z:").gsub(":","'")}
+        $1 + update.strftime("%Y%m%d%H%M%S%:z:)").gsub(":","'")}
     end
   end
 
