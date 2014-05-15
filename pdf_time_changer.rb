@@ -14,7 +14,13 @@ CDATE_XMP_RE = /<(xmp:CreateDate)>(.*)<\/\1>/
 MDATE_XAP_RE = /xap:ModifyDate=(["'])([^'"]+)\1/
 MDATE_XMP_RE = /<(xmp:ModifyDate)>(.*)<\/\1>/
 
-DATE_FORMAT = '%F %T %:z'
+DATE_FORMAT = '%F %T'
+
+class Hash
+  def to_datetime
+    DateTime.new( self[:year], self[:mon], self[:mday], self[:hour], self[:min], self[:sec], self[:zone])
+  end
+end
 
 
 module Frm_form1
@@ -32,7 +38,7 @@ module Frm_form1
   end
   
   # メッセージを表示
-  def show(msg = "", cont = false)
+  def disp(msg = "", cont = false)
     if cont
       @msg_text += msg
     else
@@ -41,11 +47,12 @@ module Frm_form1
     @msg.text = @msg_text
     n = @msg_text.size
     @msg.setSel(n, n)
+    @msg.setCaret(n)
   end
   
   # メッセージを詳細に表示する場合
   def info(msg)
-    if @cbVerbose
+    if @cbVerbose.checked?
       @msg_text += msg.chomp + "\r\n"
       @msg.text = @msg_text
     end
@@ -55,9 +62,9 @@ module Frm_form1
   def self_dropfiles(files)
 
     # Start
-    show "==============================================================="
-    show "処理開始： #{DateTime.now.strftime(DATE_FORMAT)}"
-    show "---------------------------------------------------------------"
+    disp "==============================================================="
+    disp "処理開始： #{DateTime.now.strftime(DATE_FORMAT)}"
+    disp "---------------------------------------------------------------"
 
     # 修正項目ハッシュの取得
     c_mod = get_mod(@c_edits)
@@ -69,14 +76,14 @@ module Frm_form1
     ng = 0 # 処理に失敗したファイル数
     
     files.each do |file|
-      show "対象ファイル：#{file}"
+      disp "対象ファイル：#{file}"
       back = file + ".bak"
-      show "対象ファイルを退避 ==> #{back} ", true
+      disp "対象ファイルを退避 ==> #{back} ", true
       begin
         File.rename(file, back)
-        show " OK"
+        disp " OK"
       rescue
-        show " エラー (処理をスキップします)"
+        disp " エラー (処理をスキップします)"
         ng += 1
         next
       end
@@ -84,26 +91,26 @@ module Frm_form1
         f = open(back, "rb")
         info "PDFをオープン"
       rescue
-        show "退避後のファイル(#{back})を読み込み様に開けませんでした．(BUG)"
-        show "なんらかの重大なエラーが生じた可能性があるので処理を中断しました．"
+        disp "退避後のファイル(#{back})を読み込み様に開けませんでした．(BUG)"
+        disp "なんらかの重大なエラーが生じた可能性があるので処理を中断しました．"
         return
       end
       begin
         out = open(file, "wb")
         info "出力先をオープン"
       rescue
-        show "ファイル(#{file})を書き込み様に開けませんでした．"
-        show "ディスクの空きが不足しているなどがのエラーが考えられます．"
-        show "重大なエラーの為処理を中断しました．"
+        disp "ファイル(#{file})を書き込み様に開けませんでした．"
+        disp "ディスクの空きが不足しているなどがのエラーが考えられます．"
+        disp "重大なエラーの為処理を中断しました．"
         return
       end
       header = f.gets
-      msg "PDF バージョン: #{header}"
+      disp "PDF バージョン: #{header}"
       begin
         out.puts header
       rescue
-        show "ファイルが書き込みできませんでした."
-        show "スキップします."
+        disp "ファイルが書き込みできませんでした."
+        disp "スキップします."
         out.close
         f.close
         File.delete(file)
@@ -112,13 +119,15 @@ module Frm_form1
         next
       end
       while line = f.gets
+        ### reset for debug
+        tm = nil
         #####################################
         begin # 作成日時
         if line =~ CDATE_OLD_RE
-          dt = DateTime.parse($2+$3)
-          if update = query("作成日時", c_mod, dt)
+          dc = DateTime.parse($2+$3)
+          if tm = query("作成日時", c_mod, dc)
             line.sub!(CDATE_OLD_RE){
-              $1 + update.strftime("%Y%m%d%H%M%S%:z:)").gsub(":","'")}
+              $1 + tm.strftime("%Y%m%d%H%M%S%:z:)").gsub(":","'")}
           end
         end
         if line =~ CDATE_XAP_RE
@@ -135,27 +144,32 @@ module Frm_form1
               tm.strftime("<#{$1}>%FT%T%:z</#{$1}>")}
           end
         end
-        rescue 
-          show "エラーが生じました． 作成日時の設定にエラーがあるかもしれません．"
-          show "処理を中断し，ファイルを復旧します．"
+        rescue StandardError => e
+          disp "エラーが生じました．"
+          disp " 作成日時の設定にエラーがあるかもしれません．"
+          info " dc: #{dc.to_s}"
+          info " $2: #{$2}"
+          info " mod: #{c_mod.inspect}"
+          info " tm: #{tm}"
+          disp "処理を中断し，ファイルを復旧します．"
           out.close
           f.close
           File.delete(file)
           File.rename(back, file)
           #File.rename(file, file+".err")
-          #show "注意：処理途中だったファイルを#{file+'.err'}に移動し，オリジナルファイルを復元しました．"
+          #disp "注意：処理途中だったファイルを#{file+'.err'}に移動し，オリジナルファイルを復元しました．"
+          info e.message
           return
         end
         
         begin # mod
         if line =~ MDATE_OLD_RE
-          dt = DateTime.parse($2+$3)
-          if update = query("更新日時", m_mod, dt)
+          dm = DateTime.parse($2+$3)
+          if tm = query("更新日時", m_mod, dm)
             line.sub!(MDATE_OLD_RE){
-              $1 + update.strftime("%Y%m%d%H%M%S%:z:)").gsub(":","'")}
+              $1 + tm.strftime("%Y%m%d%H%M%S%:z:)").gsub(":","'")}
           end
         end
-      
         if line =~ MDATE_XAP_RE
           dm = DateTime.parse($2)
           if tm = query("更新日時", m_mod, dm)
@@ -171,8 +185,13 @@ module Frm_form1
           end
         end
         rescue 
-          show "エラーが生じました． 更新日時の設定にエラーがあるかもしれません．"
-          show "処理を中断し，元ファイルを復旧します．"
+          disp "エラーが生じました．"
+          disp " 更新日時の設定にエラーがあるかもしれません．"
+          info " dm: #{dm}"
+          info " $2: #{$2}"
+          info " mod: #{m_mod.inspect}"
+          info " tm: #{tm}"
+          disp "処理を中断し，元ファイルを復旧します．"
           out.close
           f.close
           File.delete(file)
@@ -193,15 +212,15 @@ module Frm_form1
       
     end
     
-    show 
-    show "---------------------------------------------------------------"
-    show " #{file.size}ファイルを処理"
-    show " #{ok}ファイルの修正に成功．" if ok > 0
-    show " #{ng}ファイルは修正に失敗 " if ng > 0
-    show " 処理終了 at #{DateTime.now.strftime(DATE_FORMAT)}"
-    show 
-    show "!!注意!! ファイルシステムの時刻は現在時刻のままですので別途修正してください．"
-    show
+    disp 
+    disp "---------------------------------------------------------------"
+    disp " #{files.size}ファイルを処理"
+    disp " #{ok}ファイルの修正に成功．" if ok > 0
+    disp " #{ng}ファイルは修正に失敗 " if ng > 0
+    disp " 処理終了 at #{DateTime.now.strftime(DATE_FORMAT)}"
+    disp 
+    disp "!!注意!! ファイルシステムの時刻は現在時刻のままですので別途修正してください．"
+    disp
     
   end
 
@@ -210,14 +229,24 @@ module Frm_form1
 
     # 再解釈してコピー （Timeが引数としてくる場合があるため）
     h = DateTime._parse(tm.to_s)
+    info " old h: #{h.inspect}"
     h.update(mod)
+    info " new h: #{h.inspect}"
     dt =  h.to_datetime
 
     return false if dt == tm  # 時間修正が無ければ何もしない．
     
-    show "#{msg}を修正： #{tm.strftime(DATE_FORMAT)} ==> #{dt.strftime(DATE_FORMAT)}"
+    disp "#{msg}を修正： #{tm.strftime(DATE_FORMAT)} ==> #{dt.strftime(DATE_FORMAT)}"
     return dt
   end
+
+  def btnClear_clicked
+    @msg_text = ""
+    @msg.clear
+  end
+
+
+
 
 # キャンセル． 不安定化の原因になりそうなので
 #  def change_file_time(ct, mt, at = nil)
