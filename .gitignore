@@ -1,0 +1,6 @@
+*.pdf
+*.bak
+pdf_time_changer.log
+*.exe
+*.exy
+fd.ini
