@@ -4,6 +4,7 @@ require '_frm_pdf_time_changer.rb'
 
 require 'date'
 require 'time'
+require 'ext/win_ctime'  # ファイル作成日時へのアクセス用
 
 
 # Const for MSG box
@@ -25,13 +26,16 @@ include WConst
 
 # regex of dates
 CDATE_OLD_RE = /(\/CreationDate ?\(D:)(\d{14}[+-]\d\d)'(\d\d)'\)/
-MDATE_OLD_RE = /(\/ModDate ?\(D:)(\d{14}[+-]\d\d)'(\d\d)'\)/
-CDATE_XAP_RE = /xap:CreateDate=(["'])([^'"]+)\1/
-CDATE_XMP_RE = /<(xmp:CreateDate)>(.*)<\/\1>/
-MDATE_XAP_RE = /xap:ModifyDate=(["'])([^'"]+)\1/
-MDATE_XMP_RE = /<(xmp:ModifyDate)>(.*)<\/\1>/
+  MDATE_OLD_RE = /(\/ModDate ?\(D:)(\d{14}[+-]\d\d)'(\d\d)'\)/
+  CDATE_XAP_RE = /xap:CreateDate=(["'])([^'"]+)\1/
+  CDATE_XMP_RE = /<(xmp:CreateDate)>(.*)<\/\1>/
+  MDATE_XAP_RE = /xap:ModifyDate=(["'])([^'"]+)\1/
+  MDATE_XMP_RE = /<(xmp:ModifyDate)>(.*)<\/\1>/
 
-DATE_FORMAT = '%F %T'
+  #DATE_FORMAT = '%F %T'
+  DATE_FORMAT = '%Y-%m-%d %H-%M-%S'
+
+TIME_KEYS = [:year, :mon, :mday, :hour, :min, :sec]
 
 class Hash
   def to_datetime
@@ -47,6 +51,7 @@ module Frm_form1
     @msg_text = ""
     @logfilename = File.basename($0,".rb")+".log"
     @log = open(@logfilename, "a")
+    #@edit1.add_parentcall("char")
   end
   def get_mod(h)
     res = Hash.new
@@ -145,7 +150,8 @@ module Frm_form1
       begin
         File.rename(file, back)
         disp " OK"
-      rescue
+      rescue StandardError => e
+        info e.message
         disp " エラー"
         disp " ファイルが使用中などの為処理できなかったのでスキップします．"
         ng += 1
@@ -171,7 +177,8 @@ module Frm_form1
       begin
         out = open(file, "wb")
         info "出力先をオープン"
-      rescue
+      rescue StandardError => e
+        info e.message
         disp "ファイル(#{file})を書き込み様に開けませんでした．"
         disp "ディスクの空きが不足しているなどがのエラーが考えられます．"
         disp "重大なエラーの為処理を中断しました．"
@@ -179,7 +186,8 @@ module Frm_form1
       end
       begin
         out.puts header
-      rescue
+      rescue StandardError => e
+        info e.message
         disp "ファイルに書き込みができませんでした."
         disp "スキップします."
         out.close
@@ -194,28 +202,29 @@ module Frm_form1
         tm = nil
         #####################################
         begin # 作成日時
-        if line =~ CDATE_OLD_RE
-          dc = DateTime.parse($2+$3)
-          if tm = query("作成日時", c_mod, dc)
-            line.sub!(CDATE_OLD_RE){
-              $1 + tm.strftime("%Y%m%d%H%M%S%:z:)").gsub(":","'")}
+          if line =~ CDATE_OLD_RE
+            dc = DateTime.parse($2+$3)
+            if tm = query("作成日時", c_mod, dc)
+              line.sub!(CDATE_OLD_RE){
+                $1 + tm.strftime("%Y%m%d%H%M%S%:z:)").gsub(":","'")}
+            end
           end
-        end
-        if line =~ CDATE_XAP_RE
-          dc = DateTime.parse($2)
-          if tm = query("作成日時", c_mod, dc)
-            line.sub!(CDATE_XAP_RE){
-              tm.strftime("xap:CreateDate='%FT%T%:z'")}
+          if line =~ CDATE_XAP_RE
+            dc = DateTime.parse($2)
+            if tm = query("作成日時", c_mod, dc)
+              line.sub!(CDATE_XAP_RE){
+                tm.strftime("xap:CreateDate='%FT%T%:z'")}
+            end
           end
-        end
-        if line =~ CDATE_XMP_RE
-          dc = DateTime.parse($2)
-          if tm = query("作成日時", c_mod, dc)
-            line.sub!(CDATE_XMP_RE){
-              tm.strftime("<#{$1}>%FT%T%:z</#{$1}>")}
+          if line =~ CDATE_XMP_RE
+            dc = DateTime.parse($2)
+            if tm = query("作成日時", c_mod, dc)
+              line.sub!(CDATE_XMP_RE){
+                tm.strftime("<#{$1}>%FT%T%:z</#{$1}>")}
+            end
           end
-        end
         rescue StandardError => e
+          info e.message
           disp "エラーが生じました．"
           disp " 作成日時の設定にエラーがあるかもしれません．"
           info " dc: #{dc.to_s}"
@@ -229,33 +238,33 @@ module Frm_form1
           File.rename(back, file)
           #File.rename(file, file+".err")
           #disp "注意：処理途中だったファイルを#{file+'.err'}に移動し，オリジナルファイルを復元しました．"
-          info e.message
           return
         end
 
         begin # mod
-        if line =~ MDATE_OLD_RE
-          dm = DateTime.parse($2+$3)
-          if tm = query("更新日時", m_mod, dm)
-            line.sub!(MDATE_OLD_RE){
-              $1 + tm.strftime("%Y%m%d%H%M%S%:z:)").gsub(":","'")}
+          if line =~ MDATE_OLD_RE
+            dm = DateTime.parse($2+$3)
+            if tm = query("更新日時", m_mod, dm)
+              line.sub!(MDATE_OLD_RE){
+                $1 + tm.strftime("%Y%m%d%H%M%S%:z:)").gsub(":","'")}
+            end
           end
-        end
-        if line =~ MDATE_XAP_RE
-          dm = DateTime.parse($2)
-          if tm = query("更新日時", m_mod, dm)
-            line.sub!(MDATE_XAP_RE){
-              tm.strftime("xap:ModifyDate='%FT%T%:z'")}
+          if line =~ MDATE_XAP_RE
+            dm = DateTime.parse($2)
+            if tm = query("更新日時", m_mod, dm)
+              line.sub!(MDATE_XAP_RE){
+                tm.strftime("xap:ModifyDate='%FT%T%:z'")}
+            end
           end
-        end
-        if line =~ MDATE_XMP_RE
-          dm = DateTime.parse($2)
-          if tm = query("更新日時", m_mod, dm)
-            line.sub!(MDATE_XMP_RE){
-              tm.strftime("<#{$1}>%FT%T%:z</#{$1}>")}
+          if line =~ MDATE_XMP_RE
+            dm = DateTime.parse($2)
+            if tm = query("更新日時", m_mod, dm)
+              line.sub!(MDATE_XMP_RE){
+                tm.strftime("<#{$1}>%FT%T%:z</#{$1}>")}
+            end
           end
-        end
-        rescue
+        rescue StandardError => e
+          info e.message
           disp "エラーが生じました．"
           disp " 更新日時の設定にエラーがあるかもしれません．"
           info " dm: #{dm}"
@@ -278,6 +287,50 @@ module Frm_form1
       out.close
       f.close
 
+      if @cbChangeFileTime.checked?
+        # 最終更新
+        begin
+          mt = File.mtime(back)
+          arr = TIME_KEYS.map{|k| m_mod[k] || mt.send(k)}
+          tm = Time.local( * arr )
+          info "tm: #{tm} ==> #{tm.strftime(DATE_FORMAT)}"
+          disp "ファイル最終更新日時を修正： #{mt.strftime(DATE_FORMAT)} ==> #{tm.strftime(DATE_FORMAT)}"
+          File.utime(tm, tm, file)
+        rescue StandardError => e
+          info e.message
+          disp "ファイル最終更新日時の修正でエラーが生じました．"
+          disp " 更新日時の設定にエラーがあるかもしれません．"
+          info " mt: #{mt.to_s}"
+          info " arr: #{arr.inspect}"
+          info " mod: #{m_mod.inspect}"
+          info " tm: #{tm.to_s}"
+          disp "処理を中断し，元ファイルを復旧します．"
+          File.delete(file)
+          File.rename(back, file)
+          return nil
+        end
+
+        # 作成日時
+        begin
+          ct = File.creation_time(back)
+          arr = TIME_KEYS.map{|k| c_mod[k] || ct.send(k)}
+          tm = Time.local( * arr )
+          disp "ファイル作成日時を修正:  #{ct.strftime(DATE_FORMAT)} ==> #{tm.strftime(DATE_FORMAT)}"
+          File.creation_time(file, tm)
+        rescue StandardError => e
+          info e.message
+          disp "エラーが生じました．"
+          disp " 作成日時の設定にエラーがあるかもしれません．"
+          info " ct: #{ct.to_s}"
+          info " mod: #{c_mod.inspect}"
+          info " arr: #{arr.inspect}"
+          info " tm: #{tm}"
+          disp "処理を中断し，ファイルを復旧します．"
+          File.delete(file)
+          File.rename(back, file)
+          return nil
+        end
+      end
       ok += 1
 
     end
@@ -288,7 +341,7 @@ module Frm_form1
     disp " #{ng}ファイルは修正に失敗 " if ng > 0
     disp " 処理対象外 #{other} ファイル" if other > 0
     disp " 処理終了 at #{DateTime.now.strftime(DATE_FORMAT)}"
-    disp "!!注意!! ファイルシステムの時刻は現在時刻のままですので別途修正してください．"
+    disp "!!注意!! ファイルシステムの時刻は現在時刻のままですので別途修正してください．" unless @cbChangeFileTime.checked?
 
   end
 
@@ -313,19 +366,28 @@ module Frm_form1
     @msg.text = ""
   end
 
-
-
-
-# キャンセル． 不安定化の原因になりそうなので
-#  def change_file_time(ct, mt, at = nil)
-#    at = mt if at.nil?
-#
-#  end
-#
-#  def make_filetime(tm)
-#
-#  end
+  def self_resize(w,h)
+    if @msg
+      @msg.move(@msg.x, @msg.y, w, h - @msg.y)
+    end
+  end
 
 end
+
+
+
+#  def edit1_char(keycode, keydata)
+#    disp "keycode: #{keycode}"
+#    disp "keydata: #{keydata}"
+#  end
+
+
+#module Extn_edit1
+#  def self_char(keycode,keydata)
+#    messageBox(keycode.inspect, "Keycode",0)
+#    messageBox(keydata.inspect, "Keydata",0)
+#    call_parenthandler("edit1_char", keycode, keydata)
+#  end
+#end
 
 VRLocalScreen.start Frm_form1
