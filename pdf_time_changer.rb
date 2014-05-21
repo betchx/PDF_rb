@@ -90,12 +90,14 @@ module Frm_form1
     @c_edits.each do |k,c|
       c.text = ""
     end
+    @cyear.focus
   end
 
   def btn_clearl_medits_clicked
     @m_edits.each do |k, c|
       c.text = ""
     end
+    @myear.focus
   end
 
 
