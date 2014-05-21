@@ -53,3 +53,17 @@ ver 0.1 @ 2014-05-20
 Created.
 
 
+ver 0.2 @ 2014-05-21
+Spec Change:
+* Method name changed: `create_time` => `creation_time`
+* Change return value: it must be result of GetFileTime() as Time class object.
+Misc Change:
+* Functions and its contents are cleaned up.
+ - Extract Time structs related code into individual functions.
+ - Error message function was created (Get OS's Error message)
+ - Remove old code such as time_t related code.
+* OS's error message is added into message string of rb_raise.
+* Error handling around CloseHandle() were changed, because CloseHandle() may overwrite error code if it failed.
+* Many comments were added.
+
+

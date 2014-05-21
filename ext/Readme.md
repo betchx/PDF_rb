@@ -12,7 +12,7 @@ Windows‚É‚¨‚¢‚Äƒtƒ@ƒCƒ‹ì¬“úŽž‚ðŽæ“¾EÝ’è‚·‚é‚½‚ß‚ÌƒNƒ‰ƒXƒƒ\ƒbƒh‚ðFileƒNƒ‰ƒX‚
 ŽŸ‚Ìƒƒ\ƒbƒh‚ª’Ç‰Á‚³‚ê‚Ü‚·Di’Ç‰Á‚³‚ê‚é‚Ì‚Í‚±‚ê‚¾‚¯‚Å‚·j
 
 ```ruby
-File.create_time(file_path [, new_time] ) # => Time
+File.creation_time(file_path [, new_time] ) # => Time
 ```
 
 ‘æˆêˆø”‚Æ‚µ‚ÄŽw’è‚³‚ê‚½ƒpƒX‚Ìƒtƒ@ƒCƒ‹‚Ìì¬“úŽž‚ðTimeƒNƒ‰ƒX‚ÌƒIƒuƒWƒFƒNƒg‚Å•Ô‚µ‚Ü‚·D
@@ -38,10 +38,10 @@ EOU
 end
 
 source = ARGV.shift
-tm = File.create_time(source)
+tm = File.creation_time(source)
 
 ARGV.each do |file|
-  File.create_time(file, tm)
+  File.creation_time(file, tm)
 end
 
 ```
@@ -52,5 +52,20 @@ end
 
 ver 0.1 @ 2014-05-20
 ì¬D
+
+
+ver 0.2 @ 2014-05-21
+Žd—l•ÏXF
+* ƒƒ\ƒbƒh–¼•ÏX create_time => creation_time
+* ƒƒ\ƒbƒh‚Ì•Ô’l‚Í‚©‚È‚ç‚¸GetFileTime‚Ì’l‚É‚È‚é—l‚É‚µ‚½D
+‚»‚Ì‘¼F
+* ŠÖ”‚Ì“à—e‚ð®—iŠÈˆÕƒŠƒtƒ@ƒNƒ^ƒŠƒ“ƒO?)‚ðŽÀŽ{.
+ - ŽžŠÔŠÖŒW\‘¢‘Ì‚Ìˆµ‚¢‚ðŠÖ”‚Æ‚µ‚Ä“Æ—§‰»
+ - OS‚ÌƒGƒ‰[ƒƒbƒZ[ƒWŽæ“¾‚ðŠÖ”‰»
+ - Žg‚í‚È‚­‚È‚Á‚½ƒR[ƒh‚Ìíœitime_tŠÖŒW)
+* ƒGƒ‰[Žž‚ÉOSƒGƒ‰[ƒƒbƒZ[ƒW‚ð“Y‚¦‚Äraise‚·‚é—l‚É•ÏXD
+* CloseHandle()‘OŒã‚Å‚ÌƒGƒ‰[‚Ìˆµ‚¢‚ÌŒ©’¼‚µD
+  CloseHandle()‚ÌŒÄ‚Ño‚µ‚ÅƒGƒ‰[ƒR[ƒh‚ª•Ï‰»‚·‚é‚©‚à‚µ‚ê‚È‚¢‚Ì‚ÅD
+* ƒRƒƒ“ƒg‚Ì’Ç‰Á
 
 
