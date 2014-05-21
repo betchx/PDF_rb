@@ -1,2 +1,3 @@
 Rakefile encoding=UTF-8
 pdf_time_changer.ver encoding=UTF-8
+*.md encoding=UTF-8
