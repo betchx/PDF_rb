@@ -45,13 +45,38 @@ end
 
 
 module Frm_form1
+
+
   def self_created
     @c_edits = {:year => @cyear, :mon => @cmon, :mday => @cmday, :hour => @chour, :min => @cmin, :sec => @csec}
     @m_edits = {:year => @myear, :mon => @mmon, :mday => @mmday, :hour => @mhour, :min => @mmin, :sec => @msec}
     @msg_text = ""
     @logfilename = File.basename($0,".rb")+".log"
     @log = open(@logfilename, "a")
-    #@edit1.add_parentcall("char")
+
+    # コントロールのリストを作成
+    clist = TIME_KEYS.map{|k| @c_edits[k]}
+    clist.concat( TIME_KEYS.map{|k| @m_edits[k]} )
+    to_list = clist[1..-1]
+    to_list << clist[0]
+
+    # 親ウインドウのハンドラを呼ぶ様に設定
+    clist.each do |c|
+      c.add_parentcall("char")
+    end
+
+    # 動的にハンドラを定義
+    clist.zip(to_list).each do |c, dest|
+      name = c.name + "_char"
+      Frm_form1.module_eval <<-NNN
+        def #{name}(keycode, keydata)
+          if keycode == 9
+            @#{dest.name}.setSel(0,@#{dest.name}.text.length)
+            @#{dest.name}.focus
+          end
+        end
+      NNN
+    end
   end
   def get_mod(h)
     res = Hash.new
@@ -371,23 +396,6 @@ module Frm_form1
       @msg.move(@msg.x, @msg.y, w, h - @msg.y)
     end
   end
-
 end
-
-
-
-#  def edit1_char(keycode, keydata)
-#    disp "keycode: #{keycode}"
-#    disp "keydata: #{keydata}"
-#  end
-
-
-#module Extn_edit1
-#  def self_char(keycode,keydata)
-#    messageBox(keycode.inspect, "Keycode",0)
-#    messageBox(keydata.inspect, "Keydata",0)
-#    call_parenthandler("edit1_char", keycode, keydata)
-#  end
-#end
 
 VRLocalScreen.start Frm_form1
