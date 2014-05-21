@@ -2,14 +2,14 @@
 # vim: set fenc=utf-8 :
 resource:
   version:
-    file_version_number   : 0.1.0.0
-    product_version_number: 0.1.0.0
-    comments              : アルファ版
+    file_version_number   : 0.2.0.0
+    product_version_number: 0.2.0.0
+    comments              : アルファ版(ファイル日時修正可能)
     company_name          : Nikken Sekkei Civil Eng. Ltd.
     legal_copyright       : Atsushi Tanabe
     legal_trademarks      : 
-    file_version          : Version 0.1
-    product_version       : Version 0.1
+    file_version          : Version 0.2
+    product_version       : Version 0.2
     product_name          : 
     file_description      : PDFファイルの日時を指定した部分のみ修正．
     internal_name         : pdf_time_changer
