@@ -4,3 +4,7 @@ pdf_time_changer.log
 *.exe
 *.exy
 fd.ini
+ext/Makefile
+ext/mkmf.log
+ext/win_ctime.o
+ext/win_ctime.so
